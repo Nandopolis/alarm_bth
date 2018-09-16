@@ -156,6 +156,7 @@ uint8_t isOffBtn(void) {
 }
 uint8_t isSirenFrec(void) {
   if(digitalRead(sound_dig_pin) == HIGH) {
+    Serial.println(F("sound detected..."));
     for(i = 0; i < samples; i++) {
       microseconds = micros();
       vReal[i] = analogRead(sound_an_pin);
@@ -168,6 +169,8 @@ uint8_t isSirenFrec(void) {
     FFT.ComplexToMagnitude(vReal, vImag, samples);
 
     double peak = FFT.MajorPeak(vReal, samples, samplingFrequency);
+    Serial.println(F("frec: "));
+    Serial.println(peak, 1);
     if ((peak > 1800.0) && (peak < 2000.0)) return 1;
     else return 0;
   }
@@ -182,18 +185,21 @@ void onLoop(void) {
   if (alarm.isStateChanged()) {
     digitalWrite(on_led, HIGH);
     comandosAT(1);//Llama a la función comandosAT con salida = 1 (alerta no activada)
+    Serial.println(F("state: on"));
   }
 }
 void offLoop(void) {
   if (alarm.isStateChanged()) {
     digitalWrite(on_led, LOW);
     comandosAT(2);//Llama a la función comandosAT con salida = 2 (alarma apagada?)
+    Serial.println(F("state: off"));
   }
 }
 uint32_t last_time;
 void sirenLoop(void) {
   if (alarm.isStateChanged()) {
     comandosAT(0);//Llama a la función comandosAT con salida = 0 (alerta activada)
+    Serial.println(F("state: siren"));
     last_time = millis();
     digitalWrite(led_pin, HIGH);
   }
