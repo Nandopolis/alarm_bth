@@ -63,7 +63,7 @@ void mostrarDatosSeriales()//Muestra los datos que va entregando el sim900
         Serial.write(Sim900Serial.read());
 }
 
-void comandosAT(int salida){
+void comandosAT(String service_route, int salida){
     Sim900Serial.println(F("AT+CIPSTATUS"));//Consultar el estado actual de la conexión
     delay(2000);
     Sim900Serial.println(F("AT+CIPMUX=0"));//comando configura el dispositivo para una conexión IP única o múltiple 0=única
@@ -92,7 +92,7 @@ void comandosAT(int salida){
     //String(latitude)
 //    String datos="GET /mapacentral/api/vehiculoposition?id=12&latitud=77.1300000&longitud="+String(salida);
 //http://18.221.56.190/mapacentral/api/activatealarm?id=10&status=1
-    String datos="GET /mapacentral/api/activatealarm?id=10&status="+String(salida);
+    String datos="GET /mapacentral/api/" + service_route + "alarm?id=10&status=" + String(salida);
     Sim900Serial.println(datos);//Envía datos al servidor remoto
     delay(4000);
     mostrarDatosSeriales();
@@ -115,8 +115,8 @@ void setup() {
   siren_trans[1] = new EvnTransition(isStopSirenBtn, ON);
 
   // states setup
-  alarm_states[OFF].setState(onLoop, off_trans, 1);
-  alarm_states[ON].setState(offLoop, on_trans, 2);
+  alarm_states[OFF].setState(offLoop, off_trans, 1);
+  alarm_states[ON].setState(onLoop, on_trans, 2);
   alarm_states[SIREN].setState(sirenLoop, siren_trans, 2);
 
   // sm setup
@@ -183,23 +183,23 @@ uint8_t isStopSirenBtn(void) {
 
 void onLoop(void) {
   if (alarm.isStateChanged()) {
-    digitalWrite(on_led, HIGH);
-    comandosAT(1);//Llama a la función comandosAT con salida = 1 (alerta no activada)
     Serial.println(F("state: on"));
+    digitalWrite(on_led, HIGH);
+    comandosAT("status", 0);//Llama a la función comandosAT con salida = 1 (alerta no activada)
   }
 }
 void offLoop(void) {
   if (alarm.isStateChanged()) {
-    digitalWrite(on_led, LOW);
-    comandosAT(2);//Llama a la función comandosAT con salida = 2 (alarma apagada?)
     Serial.println(F("state: off"));
+    digitalWrite(on_led, LOW);
+    comandosAT("status", 1);//Llama a la función comandosAT con salida = 2 (alarma apagada?)
   }
 }
 uint32_t last_time;
 void sirenLoop(void) {
   if (alarm.isStateChanged()) {
-    comandosAT(0);//Llama a la función comandosAT con salida = 0 (alerta activada)
     Serial.println(F("state: siren"));
+    comandosAT("activate", 0);//Llama a la función comandosAT con salida = 0 (alerta activada)
     last_time = millis();
     digitalWrite(led_pin, HIGH);
   }
